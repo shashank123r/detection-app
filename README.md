@@ -171,12 +171,5 @@ This starts the server on port 5001 and tests the `/ping`, `/health`, and `/` en
 - Snapshot files are stored in `static/snapshots/` and served as static files
 - If the homepage fails to load, try `/ping` first — it returns plain text and confirms the server is running
 
-## Acknowledgments
-
-- **Original Author:** [Raoumair Waheed](https://github.com/raoumairwaheed) — for the original YOLOv8 object detection Flask application.
-- **Ultralytics** — YOLOv8 model and training infrastructure.
-- **OpenCV** — Video processing and capture.
-
----
 
 **Maintainer:** [Shashank R](https://github.com/shashank123r)
