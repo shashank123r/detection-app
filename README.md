@@ -172,4 +172,5 @@ This starts the server on port 5001 and tests the `/ping`, `/health`, and `/` en
 - If the homepage fails to load, try `/ping` first — it returns plain text and confirms the server is running
 
 
-**Maintainer:** [Shashank R](https://github.com/shashank123r)
+
+**Created by [Shashank R](https://github.com/shashank123r)**
