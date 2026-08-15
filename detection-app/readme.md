@@ -25,7 +25,6 @@ A Flask-based web application that processes live video streams, DroidCam phone 
 | RTSP | `rtsp://user:pass@192.168.1.100:554/stream` | IP cameras, CCTV, or any RTSP source |
 | IP Camera | `http://admin:pass@192.168.1.100/video` | MJPEG/HTTP camera streams |
 | Video File | `/path/to/video.mp4` | Local video file path |
-| YouTube/Twitch | *(via Streamlink integration if added)* | Live streams from popular platforms |
 
 ## Prerequisites
 
@@ -36,26 +35,38 @@ A Flask-based web application that processes live video streams, DroidCam phone 
 
 1. Clone the repository:
 
-   ```
+   ```bash
    git clone https://github.com/shashank123r/detection-app.git
    cd detection-app
    ```
 
-2. Install dependencies:
+2. Install PyTorch (required by Ultralytics YOLOv8):
 
+   **CPU only:**
+   ```bash
+   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
    ```
-   pip install -r requirements.txt
+
+   **With CUDA (GPU)** — replace `cu121` with your CUDA version:
+   ```bash
+   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+   ```
+
+3. Install remaining dependencies:
+
+   ```bash
+   pip install flask ultralytics opencv-python numpy
    ```
 
 ## Usage
 
 1. Run the Flask application:
 
-   ```
+   ```bash
    python app.py
    ```
 
-2. The app will start on **`http://127.0.0.1:8080`** and automatically open in your browser.
+2. The app starts on **`http://127.0.0.1:8080`** and automatically opens in your browser.
 
 3. Enter a video source:
    - Type `0` for your webcam
@@ -89,32 +100,25 @@ A Flask-based web application that processes live video streams, DroidCam phone 
 | `/snapshots` | GET | List recent snapshots (up to 24) |
 | `/health` | GET | Health check JSON (`{"status": "ok"}`) |
 | `/ping` | GET | Plain-text ping (`OK`) — use if HTML pages don't load |
-| `/favicon.ico` | GET | Returns 204 to prevent 404 errors |
 
 ## How It Works
 
 ### Backend (`app.py`)
 
-1. **Startup** — The app loads a YOLOv8 model (`yolov8n.pt`) on boot and starts Flask on port 8080.
+1. **Startup** — Loads `yolov8n.pt` on boot (auto-downloaded on first run) and starts Flask on port 8080.
 2. **StreamManager** — A thread-safe class that manages a single video capture pipeline:
-   - Opens the video source via OpenCV's `cv2.VideoCapture`
+   - Opens the video source via `cv2.VideoCapture`
    - Runs a background thread that continuously reads frames
-   - If detection is enabled, runs YOLO prediction on each frame
-   - Applies class filters if selected
+   - If detection is enabled, runs YOLO prediction on each frame and applies class filters
    - Tracks FPS and per-class object counts
    - Maintains a small frame buffer for MJPEG streaming
-3. **MJPEG Streaming** — The `/video_feed` endpoint serves frames as a multipart/x-mixed-replace response for low-latency browser display.
+3. **MJPEG Streaming** — `/video_feed` serves frames as `multipart/x-mixed-replace` for low-latency browser display.
 4. **Snapshots** — Frames are saved as JPEG to `static/snapshots/` with timestamps.
-5. **Request Logging** — Every request and response is logged to the terminal for debugging.
 
 ### Frontend (`templates/index.html`)
 
-- **Home Page** — A centered card with the source input form, confidence slider, and class filter checkboxes.
-- **Stream Page** — Two-column layout with the video feed on the left and a sidebar on the right containing:
-  - Performance stats (FPS, total objects)
-  - Control buttons (Toggle Detection, Take Snapshot)
-  - Detected objects list (sorted by count, high to low)
-  - Recent snapshots gallery (clickable thumbnails)
+- **Home Page** — Centered card with the source input form, confidence slider, and class filter checkboxes.
+- **Stream Page** — Two-column layout: video feed on the left, sidebar on the right with stats, controls, detected objects list, and snapshot gallery.
 - **JavaScript** — Polls `/stats` every 500ms for real-time updates. Handles toggle and snapshot via fetch API.
 - **Responsive** — Stacks vertically on screens < 900px.
 
@@ -124,17 +128,13 @@ A Flask-based web application that processes live video streams, DroidCam phone 
 detection-app/
 ├── app.py                  # Main Flask application with StreamManager
 ├── camera_settings.py      # Camera settings utility (exposure, contrast)
-├── coco128.yaml            # COCO128 dataset config for YOLO training
 ├── requirements.txt        # Python dependencies
 ├── run_test.py             # Quick endpoint test script
-├── readme.md               # This file
 ├── yolov8n.pt              # Pre-trained YOLOv8 model (auto-downloaded)
 ├── templates/
 │   └── index.html          # Single-page frontend (home + stream)
-├── static/
-│   └── snapshots/          # Captured snapshots (created at runtime)
-├── runs/                   # Training runs output
-└── tests/                  # Unit tests
+└── static/
+    └── snapshots/          # Captured snapshots (created at runtime)
 ```
 
 ## DroidCam Setup (Phone as Webcam)
@@ -149,7 +149,7 @@ detection-app/
 
 Run the quick test script:
 
-```
+```bash
 python run_test.py
 ```
 
@@ -160,16 +160,10 @@ This starts the server on port 5001 and tests the `/ping`, `/health`, and `/` en
 - **Python 3** + **Flask** — Web framework
 - **OpenCV (cv2)** — Video capture and frame processing
 - **YOLOv8 (Ultralytics)** — Object detection deep learning model
+- **PyTorch** — Deep learning backend for YOLOv8
 - **NumPy** — Array operations
 - **Threading** — Background capture loop
 - **HTML/CSS/JavaScript** — Frontend with clean, responsive UI
-
-## API Notes
-
-- Stream page polls `/stats` every 500ms for live FPS and detection data
-- Video feed uses MJPEG (multipart/x-mixed-replace) — no WebRTC or WebSocket needed
-- Snapshot files are stored in `static/snapshots/` and served as static files
-- If the homepage fails to load, try `/ping` first — it returns plain text and confirms the server is running
 
 ---
 
